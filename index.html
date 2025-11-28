@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Go Chess Puzzle</title>
+    <style>
+      td {
+        text-align: center;
+        font-size: 28px;
+        cursor: pointer;
+      }
+      table {
+        border-collapse: collapse;
+      }
+    </style>
+  </head>
+
+  <body>
+    <h3>Chess Puzzle</h3>
+
+    <button id="startBtn">Start Puzzle</button>
+
+    <div>
+      <p>Puzzle ID: <span id="puzzleId">-</span></p>
+      <p>Side to Move: <span id="turn">-</span></p>
+      <p>Status: <span id="status"></span></p>
+    </div>
+
+    <div id="board"></div>
+
+    <!-- Load chess.js -->
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.js"
+      integrity="sha512-oprzqYFJfo4Bx/nNEcSI0xo7ggJrLc+qQ6hrS3zV/Jn0C4dsg4gu+FXW/Vm0jP9CrV7e5e6dcLUYkg3imjfjbw=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"></script>
+
+    <script>
+      let game = null;
+      let selected = null;
+      let puzzleID = "";
+      let boardArray = "";
+      let currentFEN = "";
+      let turn = "w";
+
+      // ---------------- Start Puzzle ----------------
+      document.getElementById("startBtn").onclick = async () => {
+        const res = await fetch("/start");
+        const data = await res.json();
+
+        puzzleID = data.id;
+        document.getElementById("puzzleId").innerText = puzzleID;
+
+        // Initialize chess.js properly
+        game = new Chess(data.fenstr);
+
+        parseFEN(data.fenstr);
+        renderBoard();
+
+        document.getElementById("status").innerText = "Puzzle Started";
+      };
+
+      // Parse FEN and update turn + board
+      function parseFEN(fen) {
+        const parts = fen.split(" ");
+        boardArray = parts[0];
+        turn = parts[1];
+        document.getElementById("turn").innerText = turn;
+      }
+
+      // ---------------- Render Board ----------------
+      function renderBoard() {
+        const rows = boardArray.split("/");
+        let html = "<table border='1' cellspacing='0'>";
+
+        for (let r = 0; r < 8; r++) {
+          html += "<tr>";
+          let row = expandRow(rows[r]);
+
+          for (let c = 0; c < 8; c++) {
+            let piece = row[c] === "-" ? "" : row[c];
+            html += `<td width="50" height="50" onclick="onSquareClick(${r},${c})">${piece}</td>`;
+          }
+
+          html += "</tr>";
+        }
+
+        html += "</table>";
+        document.getElementById("board").innerHTML = html;
+      }
+
+      // Expand row "3P2" → ["-","-","-", "P", "-", "-"]
+      function expandRow(row) {
+        let arr = [];
+        for (let ch of row) {
+          if (!isNaN(ch)) {
+            for (let i = 0; i < Number(ch); i++) arr.push("-");
+          } else {
+            arr.push(ch);
+          }
+        }
+        return arr;
+      }
+
+      // ---------------- Clicking Logic ----------------
+      function onSquareClick(r, c) {
+        if (!game) return;
+
+        if (!selected) {
+          // Select piece (must not be empty)
+          let rows = boardArray.split("/");
+          let exp = expandRow(rows[r]);
+          if (exp[c] === "-") return;
+
+          selected = { r, c };
+        } else {
+          movePiece(selected, { r, c });
+          selected = null;
+        }
+      }
+
+      // ---------------- Move (with chess.js) ----------------
+      function movePiece(from, to) {
+        const fromSq = toSquareName(from.r, from.c);
+        const toSq = toSquareName(to.r, to.c);
+
+        const moveResult = game.move({ from: fromSq, to: toSq });
+
+        if (!moveResult) {
+          console.log("Illegal move:", fromSq, "→", toSq);
+          return;
+        }
+
+        currentFEN = game.fen();
+        console.log("Valid FEN:", currentFEN);
+
+        parseFEN(currentFEN);
+        renderBoard();
+        checkPuzzle(currentFEN);
+      }
+
+      // Convert board coords → "e4"
+      function toSquareName(r, c) {
+        const files = "abcdefgh";
+        const ranks = "87654321";
+        return files[c] + ranks[r];
+      }
+
+      // ---------------- Validate with Backend ----------------
+      async function checkPuzzle(fenStr) {
+        const res = await fetch(`/puzzle/${puzzleID}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ fenstr: fenStr })
+        });
+
+        const data = await res.json();
+        document.getElementById("status").innerText = data.result;
+      }
+    </script>
+  </body>
+</html>
+
