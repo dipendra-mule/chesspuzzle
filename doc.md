@@ -55,3 +55,23 @@ Response
   "message": "Move accepted"
 }
 ```
+
+1.  REST API Design
+    Start Puzzle
+
+Request: GET /puzzle/{id}/start
+Response:
+
+```json
+{
+  "puzzle_id": "1",
+  "fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+  "step": 0,
+  "side_to_move": "w"
+}
+```
+
+Backend returns the StartFEN and initial step.
+
+Frontend renders the board.
+

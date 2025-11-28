@@ -1,162 +1,584 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Go Chess Puzzle</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chess Puzzle Trainer</title>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css"
+      integrity="sha384-q94+BZtLrkL1/ohfjR8c6L+A6qzNH9R2hBLwyoAfu3i/WCvQjzL2RQJ3uNHDISdU"
+      crossorigin="anonymous" />
     <style>
-      td {
-        text-align: center;
-        font-size: 28px;
-        cursor: pointer;
+      * {
+          margin: 0;
+          padding: 0;
+          box-sizing: border-box;
       }
-      table {
-        border-collapse: collapse;
+
+      body {
+          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+          background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+          color: white;
+          min-height: 100vh;
+          padding: 20px;
+      }
+
+      .container {
+          max-width: 1200px;
+          margin: 0 auto;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 20px;
+      }
+
+      header {
+          text-align: center;
+          margin-bottom: 20px;
+      }
+
+      h1 {
+          font-size: 2.5rem;
+          margin-bottom: 10px;
+          text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+      }
+
+      .subtitle {
+          font-size: 1.2rem;
+          opacity: 0.9;
+      }
+
+      .game-container {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 30px;
+          justify-content: center;
+          width: 100%;
+      }
+
+      .board-section {
+          flex: 1;
+          min-width: 400px;
+          max-width: 600px;
+          background: rgba(255, 255, 255, 0.1);
+          backdrop-filter: blur(10px);
+          border-radius: 15px;
+          padding: 20px;
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      }
+
+      .info-section {
+          flex: 1;
+          min-width: 300px;
+          max-width: 500px;
+          background: rgba(255, 255, 255, 0.1);
+          backdrop-filter: blur(10px);
+          border-radius: 15px;
+          padding: 20px;
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      }
+
+      #board {
+          width: 100%;
+          max-width: 500px;
+          margin: 0 auto;
+      }
+
+      .controls {
+          display: flex;
+          gap: 10px;
+          margin-top: 20px;
+          justify-content: center;
+          flex-wrap: wrap;
+      }
+
+      button {
+          padding: 12px 24px;
+          border: none;
+          border-radius: 8px;
+          background: #4CAF50;
+          color: white;
+          font-weight: bold;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          font-size: 1rem;
+      }
+
+      button:hover {
+          background: #45a049;
+          transform: translateY(-2px);
+          box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      }
+
+      button:disabled {
+          background: #cccccc;
+          cursor: not-allowed;
+          transform: none;
+          box-shadow: none;
+      }
+
+      button.secondary {
+          background: #2196F3;
+      }
+
+      button.secondary:hover {
+          background: #0b7dda;
+      }
+
+      button.danger {
+          background: #f44336;
+      }
+
+      button.danger:hover {
+          background: #d32f2f;
+      }
+
+      .status {
+          margin: 20px 0;
+          padding: 15px;
+          border-radius: 8px;
+          background: rgba(255, 255, 255, 0.1);
+          text-align: center;
+          font-size: 1.1rem;
+          min-height: 60px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+      }
+
+      .status.success {
+          background: rgba(76, 175, 80, 0.3);
+          border: 1px solid #4CAF50;
+      }
+
+      .status.error {
+          background: rgba(244, 67, 54, 0.3);
+          border: 1px solid #f44336;
+      }
+
+      .status.info {
+          background: rgba(33, 150, 243, 0.3);
+          border: 1px solid #2196F3;
+      }
+
+      .move-history {
+          margin-top: 20px;
+          max-height: 200px;
+          overflow-y: auto;
+          background: rgba(0, 0, 0, 0.2);
+          border-radius: 8px;
+          padding: 10px;
+      }
+
+      .move-history h3 {
+          margin-bottom: 10px;
+          text-align: center;
+      }
+
+      .move-list {
+          display: flex;
+          flex-direction: column;
+          gap: 5px;
+      }
+
+      .move-item {
+          padding: 8px;
+          background: rgba(255, 255, 255, 0.1);
+          border-radius: 4px;
+          display: flex;
+          justify-content: space-between;
+      }
+
+      .step-indicator {
+          display: flex;
+          gap: 10px;
+          margin: 15px 0;
+          justify-content: center;
+      }
+
+      .step {
+          width: 30px;
+          height: 30px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: rgba(255, 255, 255, 0.2);
+          font-weight: bold;
+      }
+
+      .step.active {
+          background: #4CAF50;
+      }
+
+      .step.completed {
+          background: #2196F3;
+      }
+
+      @media (max-width: 768px) {
+          .game-container {
+              flex-direction: column;
+          }
+
+          .board-section, .info-section {
+              min-width: 100%;
+          }
+
+          h1 {
+              font-size: 2rem;
+          }
       }
     </style>
   </head>
-
   <body>
-    <h3>Chess Puzzle</h3>
+    <div class="container">
+      <header>
+        <h1>Chess Puzzle Trainer</h1>
+        <p class="subtitle">Test your skills with challenging chess puzzles</p>
+      </header>
 
-    <button id="startBtn">Start Puzzle</button>
+      <div class="game-container">
+        <div class="board-section">
+          <div id="board"></div>
+          <div class="controls">
+            <button id="startBtn">Start Puzzle</button>
+            <button id="resetBtn" disabled>Reset</button>
+            <button id="hintBtn" disabled>Hint</button>
+          </div>
+        </div>
 
-    <div>
-      <p>Puzzle ID: <span id="puzzleId">-</span></p>
-      <p>Side to Move: <span id="turn">-</span></p>
-      <p>Status: <span id="status"></span></p>
+        <div class="info-section">
+          <h2>Puzzle Information</h2>
+          <div class="step-indicator" id="stepIndicator">
+            <!-- Step indicators will be added dynamically -->
+          </div>
+          <div class="status" id="status">Click "Start Puzzle" to begin</div>
+          <div class="move-history">
+            <h3>Move History</h3>
+            <div class="move-list" id="moveList">
+              <!-- Move history will be added here -->
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <div id="board"></div>
-
+    <!-- Load jQuery (required for chessboard.js) -->
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <!-- Load chess.js -->
-    <script
-      src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.js"
-      integrity="sha512-oprzqYFJfo4Bx/nNEcSI0xo7ggJrLc+qQ6hrS3zV/Jn0C4dsg4gu+FXW/Vm0jP9CrV7e5e6dcLUYkg3imjfjbw=="
-      crossorigin="anonymous"
-      referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js" crossorigin="anonymous"></script>
+    <!-- Load chessboard.js -->
+    <script src="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script>
 
     <script>
-      let game = null;
-      let selected = null;
-      let puzzleID = "";
-      let boardArray = "";
-      let currentFEN = "";
-      let turn = "w";
-
-      // ---------------- Start Puzzle ----------------
-      document.getElementById("startBtn").onclick = async () => {
-        const res = await fetch("/start");
-        const data = await res.json();
-
-        puzzleID = data.id;
-        document.getElementById("puzzleId").innerText = puzzleID;
-
-        // Initialize chess.js properly
-        game = new Chess(data.fenstr);
-
-        parseFEN(data.fenstr);
-        renderBoard();
-
-        document.getElementById("status").innerText = "Puzzle Started";
+      // Game state
+      let gameState = {
+          puzzleId: null,
+          currentStep: 1,
+          game: null,
+          board: null,
+          moveHistory: [],
+          isPuzzleActive: false,
+          expectedMove: null
       };
 
-      // Parse FEN and update turn + board
-      function parseFEN(fen) {
-        const parts = fen.split(" ");
-        boardArray = parts[0];
-        turn = parts[1];
-        document.getElementById("turn").innerText = turn;
+      // DOM elements
+      const boardElement = document.getElementById('board');
+      const startBtn = document.getElementById('startBtn');
+      const resetBtn = document.getElementById('resetBtn');
+      const hintBtn = document.getElementById('hintBtn');
+      const statusElement = document.getElementById('status');
+      const moveListElement = document.getElementById('moveList');
+      const stepIndicatorElement = document.getElementById('stepIndicator');
+
+      // Initialize chessboard
+      function initBoard() {
+          const config = {
+              draggable: true,
+              position: 'start',
+              onDragStart: onDragStart,
+              onDrop: onDrop,
+              onSnapEnd: onSnapEnd,
+              pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png'
+          };
+
+          gameState.board = Chessboard('board', config);
+          gameState.game = new Chess();
       }
 
-      // ---------------- Render Board ----------------
-      function renderBoard() {
-        const rows = boardArray.split("/");
-        let html = "<table border='1' cellspacing='0'>";
+      // Chessboard event handlers
+      function onDragStart(source, piece, position, orientation) {
+          // Only allow dragging if it's the player's turn and puzzle is active
+          if (!gameState.isPuzzleActive) return false;
 
-        for (let r = 0; r < 8; r++) {
-          html += "<tr>";
-          let row = expandRow(rows[r]);
-
-          for (let c = 0; c < 8; c++) {
-            let piece = row[c] === "-" ? "" : row[c];
-            html += `<td width="50" height="50" onclick="onSquareClick(${r},${c})">${piece}</td>`;
+          // Check if it's the player's turn (white pieces)
+          if (gameState.game.turn() === 'b') {
+              return false;
           }
 
-          html += "</tr>";
-        }
-
-        html += "</table>";
-        document.getElementById("board").innerHTML = html;
-      }
-
-      // Expand row "3P2" → ["-","-","-", "P", "-", "-"]
-      function expandRow(row) {
-        let arr = [];
-        for (let ch of row) {
-          if (!isNaN(ch)) {
-            for (let i = 0; i < Number(ch); i++) arr.push("-");
-          } else {
-            arr.push(ch);
+          // Check if the piece belongs to the current player
+          if ((gameState.game.turn() === 'w' && piece.search(/^b/) !== -1) ||
+              (gameState.game.turn() === 'b' && piece.search(/^w/) !== -1)) {
+              return false;
           }
-        }
-        return arr;
       }
 
-      // ---------------- Clicking Logic ----------------
-      function onSquareClick(r, c) {
-        if (!game) return;
+      function onDrop(source, target) {
+          // See if the move is legal
+          const move = gameState.game.move({
+              from: source,
+              to: target,
+              promotion: 'q' // Always promote to queen for simplicity
+          });
 
-        if (!selected) {
-          // Select piece (must not be empty)
-          let rows = boardArray.split("/");
-          let exp = expandRow(rows[r]);
-          if (exp[c] === "-") return;
+          // Illegal move
+          if (move === null) return 'snapback';
 
-          selected = { r, c };
-        } else {
-          movePiece(selected, { r, c });
-          selected = null;
-        }
-      }
+          // Update board position
+          gameState.board.position(gameState.game.fen());
 
-      // ---------------- Move (with chess.js) ----------------
-      function movePiece(from, to) {
-        const fromSq = toSquareName(from.r, from.c);
-        const toSq = toSquareName(to.r, to.c);
+          // Add move to history
+          addMoveToHistory(move);
 
-        const moveResult = game.move({ from: fromSq, to: toSq });
+          // Validate move with backend
+          validateMove(move);
 
-        if (!moveResult) {
-          console.log("Illegal move:", fromSq, "→", toSq);
+          console.log("onDrop: Move processed.");
           return;
-        }
-
-        currentFEN = game.fen();
-        console.log("Valid FEN:", currentFEN);
-
-        parseFEN(currentFEN);
-        renderBoard();
-        checkPuzzle(currentFEN);
       }
 
-      // Convert board coords → "e4"
-      function toSquareName(r, c) {
-        const files = "abcdefgh";
-        const ranks = "87654321";
-        return files[c] + ranks[r];
+      function onSnapEnd() {
+          gameState.board.position(gameState.game.fen());
       }
 
-      // ---------------- Validate with Backend ----------------
-      async function checkPuzzle(fenStr) {
-        const res = await fetch(`/puzzle/${puzzleID}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ fenstr: fenStr })
-        });
+      // API functions
+      async function startPuzzle() {
+          try {
+              const response = await fetch('/start', {
+                  method: 'GET',
+                  headers: {
+                      'Content-Type': 'application/json'
+                  }
+              });
 
-        const data = await res.json();
-        document.getElementById("status").innerText = data.result;
+              console.log("startPuzzle: Received response from /start.", response);
+
+              if (!response.ok) {
+                  throw new Error('Failed to start puzzle');
+              }
+
+              const puzzleData = await response.json();
+              console.log("startPuzzle: Received puzzle data=", puzzleData);
+
+              // Update game state
+              gameState.puzzleId = puzzleData.id;
+              gameState.currentStep = 1;
+              gameState.moveHistory = [];
+              gameState.isPuzzleActive = true;
+
+              // Load the FEN position
+              gameState.game = new Chess(puzzleData.fen);
+              gameState.board.position(puzzleData.fen);
+
+              // Update UI
+              updateStatus('Make your first move!', 'info');
+              updateStepIndicator();
+              clearMoveHistory();
+              resetBtn.disabled = false;
+              hintBtn.disabled = false;
+              startBtn.disabled = true;
+
+          } catch (error) {
+              console.error('Error starting puzzle:', error);
+              updateStatus('Failed to start puzzle. Please try again.', 'error');
+          }
       }
+
+      async function validateMove(move) {
+          console.log("validateMove: Validating move=", move, "gameState.currentStep=", gameState.currentStep);
+          try {
+              const response = await fetch(`/puzzle/${gameState.puzzleId}`, {
+                  method: 'POST',
+                  headers: {
+                      'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify({
+                      move: move.from + move.to, // Convert to UCI format
+                      step: gameState.currentStep
+                  })
+              });
+
+              console.log((move.from + move.to).length, gameState.currentStep, move.from + move.to);
+
+              console.log("validateMove: Sent to backend: move=", move.from + move.to, "step=", gameState.currentStep);
+              console.log("validateMove: Received response from /puzzle.", response);
+
+              if (!response.ok) {
+                  throw new Error('Failed to validate move');
+              }
+
+              const result = await response.json();
+              console.log("validateMove: Received result=", result);
+
+              if (result.result === 'you have failed') {
+                  updateStatus('Incorrect move! Try again.', 'error');
+                  console.log("validateMove: Move failed. Undoing move.");
+                  // Reset to previous position
+                  gameState.game.undo();
+                  gameState.board.position(gameState.game.fen());
+                  // Remove last move from history
+                  gameState.moveHistory.pop();
+                  updateMoveHistory();
+              } else if (result.result === 'correct move') {
+                  updateStatus('Correct move! Good job.', 'success');
+                  gameState.currentStep++; // Increment for user's successful move
+                  console.log("validateMove: Correct move. New step=", gameState.currentStep);
+
+                  // Make computer's move if provided
+                  if (result.nextMove) {
+                      console.log("validateMove: Computer next move=", result.nextMove);
+                      setTimeout(() => makeComputerMove(result.nextMove), 500);
+                  }
+
+                  updateStepIndicator();
+              } else if (result.result === 'you have won') {
+                  updateStatus('Congratulations! You solved the puzzle!', 'success');
+                  gameState.isPuzzleActive = false;
+                  resetBtn.disabled = false;
+                  hintBtn.disabled = true;
+                  console.log("validateMove: Puzzle won. Final step=", gameState.currentStep);
+              }
+
+          } catch (error) {
+              console.error('Error validating move:', error);
+              updateStatus('Failed to validate move. Please try again.', 'error');
+              console.log("validateMove: Error occurred, undoing move.");
+              // Reset to previous position
+              gameState.game.undo();
+              gameState.board.position(gameState.game.fen());
+              // Remove last move from history
+              gameState.moveHistory.pop();
+              updateMoveHistory();
+          }
+      }
+
+      function makeComputerMove(moveUCI) {
+          // Convert UCI to move object
+          gameState.currentStep++;
+          const from = moveUCI.substring(0, 2);
+          const to = moveUCI.substring(2, 4);
+
+          const move = gameState.game.move({
+              from: from,
+              to: to,
+              promotion: 'q'
+          });
+
+          if (move) {
+              gameState.board.position(gameState.game.fen());
+              addMoveToHistory(move, true);
+              updateStatus('Computer moved. Your turn!', 'info');
+              console.log("makeComputerMove: Computer move successful. New step=", gameState.currentStep);
+          } else {
+              console.error("makeComputerMove: Computer's move was illegal.", moveUCI);
+          }
+      }
+
+      // UI update functions
+      function updateStatus(message, type = 'info') {
+          console.log("updateStatus: message=", message, "type=", type);
+          statusElement.textContent = message;
+          statusElement.className = 'status';
+          statusElement.classList.add(type);
+          console.log(gameState.currentStep)
+      }
+
+      function addMoveToHistory(move, isComputer = false) {
+          console.log("addMoveToHistory: move=", move, "isComputer=", isComputer);
+          const moveNumber = Math.ceil((gameState.moveHistory.length + 1) / 2);
+          const moveNotation = isComputer ?
+              `${moveNumber}. ... ${move.san}` :
+              `${moveNumber}. ${move.san}`;
+
+          gameState.moveHistory.push({
+              notation: moveNotation,
+              isComputer: isComputer
+          });
+
+          updateMoveHistory();
+          console.log("addMoveToHistory: Move history updated.", gameState.moveHistory);
+      }
+
+      function updateMoveHistory() {
+          console.log("updateMoveHistory: Updating move history UI.");
+          moveListElement.innerHTML = '';
+
+          gameState.moveHistory.forEach(move => {
+              const moveItem = document.createElement('div');
+              moveItem.className = 'move-item';
+              moveItem.innerHTML = `
+                  <span>${move.notation}</span>
+                  <span>${move.isComputer ? 'Computer' : 'You'}</span>
+              `;
+              moveListElement.appendChild(moveItem);
+          });
+
+          // Scroll to bottom
+          moveListElement.scrollTop = moveListElement.scrollHeight;
+          console.log("updateMoveHistory: Move history UI updated.");
+      }
+
+      function clearMoveHistory() {
+          console.log("clearMoveHistory: Clearing move history.");
+          gameState.moveHistory = [];
+          moveListElement.innerHTML = '';
+      }
+
+      function updateStepIndicator() {
+          console.log("updateStepIndicator: Updating step indicator. Current step=", gameState.currentStep);
+          stepIndicatorElement.innerHTML = '';
+
+          // For now, we'll show 3 steps as per your backend example
+          for (let i = 1; i <= 3; i++) {
+              const step = document.createElement('div');
+              step.className = 'step';
+
+              if (i === gameState.currentStep) {
+                  step.classList.add('active');
+              } else if (i < gameState.currentStep) {
+                  step.classList.add('completed');
+              }
+
+              step.textContent = i;
+              stepIndicatorElement.appendChild(step);
+          }
+          console.log("updateStepIndicator: Step indicator updated.");
+      }
+
+      function resetPuzzle() {
+          console.log("resetPuzzle: Resetting puzzle.");
+          if (gameState.puzzleId) {
+              startPuzzle();
+          }
+      }
+
+      function showHint() {
+          console.log("showHint: Showing hint.");
+          // Simple hint system - could be enhanced with actual puzzle hints
+          updateStatus('Think about controlling the center and developing your pieces.', 'info');
+      }
+
+      // Event listeners
+      startBtn.addEventListener('click', startPuzzle);
+      resetBtn.addEventListener('click', resetPuzzle);
+      hintBtn.addEventListener('click', showHint);
+
+      // Initialize the application
+      $(document).ready(function() {
+          console.log("Document ready: Initializing board.");
+          initBoard();
+      });
     </script>
   </body>
 </html>
